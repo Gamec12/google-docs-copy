@@ -8,6 +8,8 @@ const Font = Quill.import('attributors/style/font'); // import font style
 Font.whitelist = ['Arial', 'Verdana', 'Roboto']; // whitelist fonts
 Quill.register(Font, true); // register fonts
 
+
+const SAAVE_INTERVAL_MS = 2000 // save every 2 seconds
 const TOOLBAR_OPTIONS = [
     [{ header: [1, 2, 3, 4, 5, 6, false] }], // header options
     [{ font: Font.whitelist }], // use whitelisted fonts
@@ -26,6 +28,22 @@ export default function TextEditor() {
     const { id:documentId } = useParams() // this id is the same name as the one in the url and here we rename it to document id
     const [socket, setSocket] = useState()
     const [quill, setQuill] = useState()
+
+    // to svae the document
+    useEffect(() => {
+        if (socket == null || quill == null) return 
+
+        const interval = setInterval(() => {
+            socket.emit('save-document' , quill.getContents())
+        }, SAAVE_INTERVAL_MS)
+
+        return() => {
+            clearInterval(interval) // clear the interval when we are done
+        }
+
+
+
+    }, [socket, quill]) // we want to run this when the socket and quill changes
 
 
     useEffect(() => {
