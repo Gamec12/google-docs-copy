@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Quill from 'quill';
 import "quill/dist/quill.snow.css"; // the styles for the editor
 import { io } from 'socket.io-client'
+import { useParams } from 'react-router-dom'
 
 const Font = Quill.import('attributors/style/font'); // import font style
 Font.whitelist = ['Arial', 'Verdana', 'Roboto']; // whitelist fonts
@@ -22,8 +23,28 @@ const TOOLBAR_OPTIONS = [
 
 
 export default function TextEditor() {
+    const { id:documentId } = useParams() // this id is the same name as the one in the url and here we rename it to document id
     const [socket, setSocket] = useState()
     const [quill, setQuill] = useState()
+
+
+    useEffect(() => {
+        if(socket== null || quill == null) return // if socket or quill is null then we dont want to do anything
+
+
+         //listening to the event once, will automatically clean up the event after listening once
+        socket.once('load-document', document => {         
+            quill.setContents(document)      // so that we can load up our text editor
+            quill.enable()                   // enable the editor bec we disabled it when we are  loading the document
+        }) 
+
+
+        socket.emit('get-document', documentId) // sending to the server they document id to attach us to the room for the document or send us the one document if it is present?
+    }, [socket, quill, documentId])
+
+
+
+
 
     useEffect(() => {
         const s = io('http://localhost:3001') // this is the url of the server.  here we connect
@@ -36,10 +57,10 @@ export default function TextEditor() {
     }, []) // the [] I think is to make sure it only runs once
 
     useEffect(() => {
-        if (socket == null || quill == null) return // if socket or quill is null then we dont want to do anything
+        if (socket == null || quill == null) return             // if socket or quill is null then we dont want to do anything
 
         const handler = (delta) => {
-            quill.updateContents(delta) // update the quill with the delta
+            quill.updateContents(delta)                 // update the quill with the delta
         }
         socket.on('receive-changes', handler)
         // send the changes to the server
@@ -74,6 +95,8 @@ export default function TextEditor() {
         const editor = document.createElement('div')
         wrapper.append(editor)                                          //current to get the current ref
         const q = new Quill(editor, { theme: 'snow', modules: { toolbar: TOOLBAR_OPTIONS } })                            // quill will be using the editor
+        q.disable()                                                  // disable the editor until we load the document
+        q.setText('loading...')                                               // disable the editor until we load the document
         setQuill(q)
 
     }, [])

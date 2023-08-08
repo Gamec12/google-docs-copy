@@ -9,9 +9,18 @@ const io = require('socket.io')(3001, {
 
 
 io.on('connection', (socket) => {
-    socket.on('send-changes', (delta) => { // the delta is passed in
-        socket.broadcast.emit('receive-changes', delta) // broadcast to everyone else  recive changes is a function name?
-    })
+    socket.on('get-document', documentId => {  // this takes in a document id)
+        const data = '' // get document from database
+        socket.join(documentId) // join the room for the document
+        socket.emit('load-document', data) // send the document to the client
+
+        
+        socket.on('send-changes', (delta) => { // the delta is passed in
+            socket.broadcast.to(documentId).emit('receive-changes', delta) // broadcast to everyone else  recive changes is a function name?
+        })
+    }) 
+    
+    
 
 
 
